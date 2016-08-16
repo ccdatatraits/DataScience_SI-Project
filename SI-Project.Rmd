@@ -1,0 +1,68 @@
+---
+title: "Statistical Inference Course Project"
+author: "Sohail Munir Khan"
+date: "14 June 2015"
+output: pdf_document
+---
+
+# Overview
+[Central Limit Theorem](https://en.wikipedia.org/wiki/Central_limit_theorem) states that any large number of iterations of independent and identically distributed (i.i.d.) each with a well-defined expected value and well-defined variance, will be approximately [normally distributed](https://en.wikipedia.org/wiki/Normal_distribution), regardless of the underlying distribution. In this case we are exploring expontential distribution rexp(n, lambda) with fixed lambda = 0.2 which will have both mean and standard deviation as (1 / lambda) => (1 / 0.2) = 5
+
+# Simulations
+We shall be doing 1000 simulations each with a generation of 40 exponential values. Once we have 
+Please find the simulation code below:
+
+```{r}
+# Clean the environment
+rm(list = ls())
+
+# Set simulation parameters
+#  n (number of exponentials generated per simulation run)
+n <- 40
+#  lambda (rate for exponential generation)
+lambda <- 0.2
+#  nosim (number of simulations)
+nosim <- 1000
+
+# Produces a massive dataMatrix with 1000 simulations of 40 exponentials each
+dataMatrix <- matrix(data = rexp(n * nosim, rate = lambda), 
+                     nrow = nosim, ncol = n)
+# Each simulation has now its own mean. 1000 * 1 means stored
+dataMatrixMeans <- apply(dataMatrix, 1, mean)
+# Mean for all means of the simulation
+s_mean <- mean(dataMatrixMeans)
+s_mean
+
+# Standard Deviation for all 1000 simulations calculated
+s_sd <- sqrt(sum((dataMatrixMeans - s_mean)^2)/length(dataMatrixMeans))
+s_sd
+
+# To be able to create ggplot graphs, I have created a data.frame df that 
+#  will hold the data to be shown
+df <- data.frame(dataMatrixMeans)
+```
+
+Histogram for the distribution of means & standard-deviation of simulated means:
+
+```{r, echo=FALSE}
+library(ggplot2)
+#ggplot(data=df, aes(x=dataMatrixMeans)) + geom_histogram(col = "red", aes(fill=..count..), binwidth #= .2) + labs(title = "Histogram for Simulation", x = "Simulation Means", y = "Frequency") + #stat_density(kernel="biweight") + theme_bw()
+ggplot(df, aes(x=dataMatrixMeans)) + 
+    geom_histogram(aes(y=..density..), colour="white", fill="yellow", alpho=.2, binwidth = .2) +
+    stat_density(color="red", geom="line", position="identity") + stat_function(geom="line", fun=dnorm, arg=list(mean=s_mean, sd=s_sd)) + geom_vline(aes(xintercept=s_mean))
+```
+
+******
+
+# Sample Mean versus Theoretical Mean
+We have calculated our simulated mean as `r s_mean` while the theoretical mean is `r 1 / lambda`. This shows that the deviation of simulated mean with theoretical mean is only `r sqrt((s_mean - (1 / lambda))^2) * 100`%
+
+******
+
+# Sample Variance versus Theoretical Variance
+We have calculated our simulated variance as `r s_sd^2` [s\_sd^2] while the theoretical variance is `r 1 / lambda^2 / n` [(theoretical sd)^2 / n == (1/lambda)^2/n] to calculate simulated variance). This shows that the deviation of simulated variance with theoretical variance is only `r sqrt((s_sd^2 - (1 / lambda^2 / n))^2) * 100`%
+
+******
+
+# Distribution
+As you can see that the figure shows how closely related the red line (simulated distribution) is to the standard normal distribution (black line). The simulated and theoretical distributions are almost touching each other implying very accurate calculations of mean and standard deviation

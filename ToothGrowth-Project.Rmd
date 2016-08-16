@@ -1,0 +1,90 @@
+---
+title: "ToothGrowth - Basic Inferential Data Analysis"
+author: "Sohail Munir Khan"
+date: "17 June 2015"
+output: pdf_document
+---
+
+# Exploratory Data Analysis
+ToothGrowth is a `r class(ToothGrowth)` within R package {datasets}.  
+The response is the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).
+
+```{r}
+library(datasets)
+data(ToothGrowth)
+summary(ToothGrowth) # Summarise ToothGrowth and its variables
+```
+
+```{r, echo=FALSE}
+library(ggplot2) # To plot and see the distribution for length
+qplot(ToothGrowth$len, geom = 'blank', xlab = "Length", ylab = "Count") +
+geom_line(aes(y = ..density.., colour = 'Tooth Growth'), stat = 'density') +
+geom_histogram(aes(y = ..density..), alpha = 0.4, binwidth = 1) +
+scale_colour_manual(name = 'Density', values = c('red')) + theme_bw()
+```
+
+```{r}
+mean(ToothGrowth$len) # mean for len of ToothGrowth
+sd(ToothGrowth$len) # SD for len of ToothGrowth
+```
+
+```{r, echo=FALSE}
+require(graphics) # Compare different len given type of supplement
+coplot(len ~ dose | supp, data = ToothGrowth, panel = panel.smooth,
+       xlab = "ToothGrowth data: length vs dose, given type of supplement")
+```
+
+******
+
+# Data Summary
+Full data has 60 Tooth Growth lengths (**len** variable). Mean is `r round(mean(ToothGrowth$len), 2)` and Standard Deviation is `r round(sd(ToothGrowth$len), 2)`.  
+Column **supp** is a factor between the two delivery methods (ascorbic acid ("VC") vs orange juice ("OJ"))  
+Variable **dose** is essentially either a value of 0.5, 1 or 2 corresponding to the levell of Vitamin in mg  
+The density function for the len of Tooth is slightly skewed as you can see from the Tooth Growth Density figure on the previous page  
+Using the __coplot__ function to look at Tooth Growth len, we can see that at lower dose levels (0.5 & 1.0) orange juice ("**OJ**") as a supplement does better than ascorbic acid ("**VC**") while at higher levels (2.0), both supplements do similarly although the gains look better for **VC**. We will try to prove this during our hypothesis testing phase
+
+******
+
+# Confidence Intervals and / or Hypothesis Tests
+
+```{r}
+vc_df <- subset(ToothGrowth, supp == "VC")
+oj_df <- subset(ToothGrowth, supp == "OJ")
+overall_result <- t.test(vc_df$len, oj_df$len, paired = TRUE)
+overall_result
+```
+Overall between VC and OJ, and putting VC as the null hypothesis, OJ does better than VC. This can be seen from confidence interval `r round(overall_result$conf.int, 2)` not containing mean zero(0) as well as is way below zero(0) and `r round(overall_result$p.value, 5)` not very close to or higher than significance level 0.05 (5%)
+
+
+```{r}
+vc_0.5_len <- subset(vc_df, dose == 0.5)$len
+oj_0.5_len <- subset(oj_df, dose == 0.5)$len
+result_0.5 <- t.test(vc_0.5_len, oj_0.5_len, paired = TRUE)
+result_0.5
+```
+Still looking at data for VC and OJ separately, but this time honing in on the 0.5 mg supplement, OJ still does better. This can be seen from confidence interval `r round(result_0.5$conf, 2)` not containing mean zero(0) and is below zero and `r round(result_0.5$p.value, 5)` not very close to or higher than significance level 0.05 (5%)
+
+```{r}
+oj_1_len <- subset(oj_df, dose == 1)$len
+vc_1_len <- subset(vc_df, dose == 1)$len
+result_1 <- t.test(vc_1_len, oj_1_len, paired = TRUE)
+result_1
+```
+For 1 mg supplement and looking at VC and OJ data, OJ does better still. This can be seen from confidence interval `r round(result_1$conf, 2)` not containing mean zero(0) as well as significtantly below zero(0) and `r round(result_1$p.value, 5)` not very close to or higher than significance level 0.05 (5%)
+
+```{r}
+vc_2_len <- subset(vc_df, dose == 2)$len
+oj_2_len <- subset(oj_df, dose == 2)$len
+result_2 <- t.test(vc_2_len, oj_2_len, paired = TRUE)
+result_2
+```
+At 2 mg level of supplement, VC definitely sits comfortably as the winner. The null hypothesis interval (`r round(result_2$conf, 2)`) easily contains 0 as the mean with a p-value of 96.7%
+
+******
+
+# Conclusion
+Our initially reaction that compares the two plots together did provide us some hints on the type of delivery methods that might be the better than the other. After doing confidence intervals, we have concluded the same results with atleast 95% confidence.
+
+## Assumptions
+* We assume that the distribution for **len** variable resembles a t-distribution even though it's slightly skewed.
+* All tests are performed in a paired fashion because the same 10 guinea pigs were used for testing purposes. We also assume that appropriate time in between tests were provided to avoid any biased results
